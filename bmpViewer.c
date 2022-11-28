@@ -23,6 +23,12 @@ unsigned short makepixel(unsigned char r, unsigned char g, unsigned char b) {
     return (unsigned short)(((r>>3)<<11)|((g>>2)<<5)|(b>>3));
 }
 
+inline unsigned char clip(int value, int min, int max);
+unsigned char clip(int value, int min, int max)
+{
+    return(value > max? max : value > min? min : value);
+}
+
 int main(int argc, char **argv)
 {
     int cols, rows;
@@ -84,6 +90,14 @@ int main(int argc, char **argv)
             b = LIMIT_UBYTE(pData[k+x*NO_OF_COLOR+0]);
             g = LIMIT_UBYTE(pData[k+x*NO_OF_COLOR+1]);
             r = LIMIT_UBYTE(pData[k+x*NO_OF_COLOR+2]);
+
+            b += 50;
+            g += 50;
+            r += 50;
+
+            clip(b,0,255);
+            clip(g,0,255);
+            clip(r,0,255);
 
             pixel = LIMIT_USHRT(makepixel(r, g, b));
 //            pBmpData[t+x] = pixel; 
