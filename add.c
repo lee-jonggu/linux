@@ -4,7 +4,7 @@
 
 #define BYTE unsigned char
 
-#define widthbytes(bits) (((bits)+31)/32*4)
+#define widthbytes(bits) (((bits)+31)/32*4) // padding
 
 typedef struct tagRGBQUAD{
 	BYTE rgbBlue; 
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
 	
 	for(i=0; i<height*3; i+=3) { 
 		for(j=0; j<width*3; j+=3) {
-			int b = inimg[j+(i*width+0)]; 
+			int b = inimg[j+(i*width+0)]; // unsigned char 0 ~ 255
 			int g = inimg[j+(i*width+1)]; 
 			int r = inimg[j+(i*width+2)]; 
 			
