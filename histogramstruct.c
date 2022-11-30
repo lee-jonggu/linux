@@ -1,3 +1,5 @@
+/* bitoffset을 +=256 하는 이유는 인덱스드 컬러를 사용하지 않기 때문에 RGBQUAD 만큼 밀어줘야 시작 위치가 제대로 찾아진다 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
