@@ -1,134 +1,101 @@
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <string.h>
+#include <limits.h>                     /* USHRT_MAX 상수를 위해서 사용한다. */
+#include "bmpHeader.h"
 
-#define BYTE unsigned char
+#define widthBytes(bits) (((bits)+31)/32*4)
 
-#define widthbytes(bits) (((bits)+31)/32*4)
+/* 이미지 데이터의 경계 검사를 위한 매크로 */
+#define LIMIT_UBYTE(n) ((n)>UCHAR_MAX)?UCHAR_MAX:((n)<0)?0:(n)
 
-typedef struct tagRGBQUAD{
-	BYTE rgbBlue; 
-	BYTE rgbGreen; 
-	BYTE rgbRed; 
-	BYTE rgbReserved;
-} RGBQUAD;
+typedef unsigned char ubyte;
 
-int main(int argc, char** argv) {
-	FILE* fp; 
-	RGBQUAD palrgb[256];
-	
-	/* BMP FILE INFO */
-	unsigned short int type; 
-	unsigned int file_size; 
-	unsigned short int reserved1; 
-	unsigned short int reserved2; 
-	unsigned int offset;
-	
-	/* BMP IMAGE INFO */
-	unsigned int header_size; 
-	int width, height; 
-	unsigned short int planes; 
-	unsigned short int bits; 
-	unsigned int compression; 
-	unsigned int imagesize; 
-	int hresolution, vresolution; 
-	unsigned int ncolors, importantcolors; 
+int main(int argc, char** argv) 
+{
+    FILE* fp; 
+    BITMAPFILEHEADER bmpHeader;             /* BMP FILE INFO */
+    BITMAPINFOHEADER bmpInfoHeader;     /* BMP IMAGE INFO */
+    RGBQUAD palrgb[256];
+    ubyte *inimg, *outimg;
+    int x, y, z, elemSize, imageSize;
+    int xFactor = 2, yFactor = 2;
 
-	char input[128], output[128];
-	
-	int i, j, size; 
-	int xFactor = 2, yFactor = 2; 
-	float srcX, srcY;
-	int index; 
-	float r,g,b,gray;
-	int graysize; 
-	int index2;
-	
-	unsigned char *grayimg, *inimg, *outimg;
-	
-	/* usage a.out in.bmp out.bmp */
-	strcpy(input, argv[1]); 
-	strcpy(output, argv[2]);
-	
-	
-	if((fp=fopen(input, "rb"))==NULL) { 
-		fprintf(stderr, "Error : Failed to open file...₩n"); 
-		return -1;
-	}
-	
-	fread(&type, sizeof(unsigned short int), 1, fp); 
-	fread(&file_size, sizeof(unsigned int), 1, fp); 
-	fread(&reserved1, sizeof(unsigned short int), 1, fp); 
-	fread(&reserved2, sizeof(unsigned short int), 1, fp); 
-	fread(&offset, sizeof(unsigned int), 1, fp);
-	
-	fread(&header_size, sizeof(unsigned int), 1, fp); 
-	fread(&width, sizeof(int), 1, fp);
-	fread(&height, sizeof(int), 1, fp);	
-	fread(&planes, sizeof(unsigned short int), 1, fp); 
-	fread(&bits, sizeof(unsigned short int), 1, fp); 
-	fread(&compression, sizeof(unsigned int), 1, fp); 
-	fread(&imagesize, sizeof(unsigned int), 1, fp); 
-	fread(&hresolution, sizeof(int), 1, fp); 
-	fread(&vresolution, sizeof(int), 1, fp); 
-	fread(&ncolors, sizeof(unsigned int), 1, fp); 
-	fread(&importantcolors, sizeof(unsigned int), 1, fp);
-	
-	size=widthbytes(bits * width); 
-	graysize = widthbytes(8 * width);
-	
-	if(!imagesize) 
-		imagesize=height*size;
-	
-	inimg=(BYTE*)malloc(sizeof(BYTE)*imagesize); 
-	outimg=(BYTE*)malloc(sizeof(BYTE)*imagesize*xFactor*yFactor); 
-	fread(inimg, sizeof(BYTE), imagesize, fp); 
-	
-	fclose(fp);
-	
-	for(i=0; i<height*3; i+=3) { 
-		for(j=0; j<width*3; j+=3) {
-			outimg[(j*xFactor)+(width*xFactor*i*yFactor)]=inimg[j+(i*width)]; 
-			outimg[(j*xFactor)+(width*xFactor*i*yFactor)+1]=inimg[j+(i*width)+1]; 
-			outimg[(j*xFactor)+(width*xFactor*i*yFactor)+2]=inimg[j+(i*width)+2];
-		};
-	 };	  
-	
-	width*=xFactor, height*=yFactor; 
-	size=widthbytes(bits*width); 
-	imagesize=height*size; 
-	offset+=256*sizeof(RGBQUAD);
-	
-	if((fp=fopen(output, "wb"))==NULL) { 
-		fprintf(stderr, "Error : Failed to open file...₩n"); 
-		return -1;
-	}
-	
-	fwrite(&type, sizeof(unsigned short int), 1, fp); 
-	fwrite(&file_size, sizeof(unsigned int), 1, fp); 
-	fwrite(&reserved1, sizeof(unsigned short int), 1, fp); 
-	fwrite(&reserved2, sizeof(unsigned short int), 1, fp); 
-	fwrite(&offset, sizeof(unsigned int), 1, fp); 
-	
-	fwrite(&header_size, sizeof(unsigned int), 1, fp); 
-	fwrite(&width, sizeof(int), 1, fp);
-	fwrite(&height, sizeof(int), 1, fp);
-	fwrite(&planes, sizeof(unsigned short int), 1, fp); 
-	fwrite(&bits, sizeof(unsigned short int), 1, fp);		
-	fwrite(&compression, sizeof(unsigned int), 1, fp); 
-	fwrite(&imagesize, sizeof(unsigned int), 1, fp); 
-	fwrite(&hresolution, sizeof(int), 1, fp); 
-	fwrite(&vresolution, sizeof(int), 1, fp); 
-	fwrite(&ncolors, sizeof(unsigned int), 1, fp); 
-	fwrite(&importantcolors, sizeof(unsigned int), 1, fp);
-	fwrite(palrgb, sizeof(unsigned int), 256, fp); 
-	
-	fwrite(outimg, sizeof(unsigned char), imagesize, fp);
-	
-	free(inimg); 
-	free(outimg);
-	
-	fclose(fp); 
-	
-	return 0;
+    if(argc != 3) {
+        fprintf(stderr, "usage : %s input.bmp output.bmp\n", argv[0]);
+        return -1;
+    }
+    
+    /***** read bmp *****/ 
+    if((fp=fopen(argv[1], "rb")) == NULL) { 
+        fprintf(stderr, "Error : Failed to open file...₩n"); 
+        return -1;
+    }
+
+    /* BITMAPFILEHEADER 구조체의 데이터 */
+    fread(&bmpHeader, sizeof(BITMAPFILEHEADER), 1, fp);
+
+    /* BITMAPINFOHEADER 구조체의 데이터 */
+    fread(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, fp);
+
+    /* 트루 컬러를 지원하지 않으면 표시할 수 없다. */
+    if(bmpInfoHeader.biBitCount != 24) {
+        perror("This image file doesn't supports 24bit color\n");
+        fclose(fp);
+        return -1;
+    }
+    
+    imageSize = widthBytes(bmpInfoHeader.biBitCount * bmpInfoHeader.biWidth) * 
+                           bmpInfoHeader.biHeight; 
+
+    /* 이미지의 해상도(넓이 × 깊이) */
+    printf("Resolution : %d x %d\n", bmpInfoHeader.biWidth, bmpInfoHeader.biHeight);
+    printf("Bit Count : %d\n", bmpInfoHeader.biBitCount);     /* 픽셀당 비트 수(색상) */
+    printf("Image Size : %d\n", imageSize);
+    
+    inimg = (ubyte*)malloc(sizeof(ubyte)*imageSize); 
+    outimg = (ubyte*)malloc(sizeof(ubyte)*imageSize*xFactor*yFactor);
+    fread(inimg, sizeof(ubyte), imageSize, fp); 
+    
+    fclose(fp);
+    
+    elemSize = bmpInfoHeader.biBitCount / 8;
+    for(y = 0; y < bmpInfoHeader.biHeight*elemSize; y+=elemSize) { 
+        for(x = 0; x < bmpInfoHeader.biWidth*elemSize; x+=elemSize) {
+            for(z = 0; z < elemSize; z++) {
+                int e = inimg[x+(y*bmpInfoHeader.biWidth)+z]; 
+                //outimg[(x)+(bmpInfoHeader.biWidth*y)+z]=e;
+                outimg[(x+(bmpInfoHeader.biWidth*y*yFactor))*xFactor+z]=e;
+                outimg[(x+(bmpInfoHeader.biWidth*y*yFactor))*xFactor+z+elemSize]=e;
+                outimg[(x+(bmpInfoHeader.biWidth*(y*yFactor+elemSize)))*xFactor+z]=e;
+                outimg[(x+(bmpInfoHeader.biWidth*(y*yFactor+elemSize)))*xFactor+z+elemSize]=e;
+            }
+        }
+     }         
+     
+    /***** write bmp *****/ 
+    if((fp=fopen(argv[2], "wb"))==NULL) { 
+        fprintf(stderr, "Error : Failed to open file...₩n"); 
+        return -1;
+    }
+
+    bmpInfoHeader.biWidth*=xFactor; 
+    bmpInfoHeader.biHeight*=yFactor;
+	  bmpInfoHeader.SizeImage = imageSize * xFactor * yFactor;
+    
+    /* BITMAPFILEHEADER 구조체의 데이터 */
+    fwrite(&bmpHeader, sizeof(BITMAPFILEHEADER), 1, fp);
+
+    /* BITMAPINFOHEADER 구조체의 데이터 */
+    fwrite(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, fp);
+
+    fwrite(outimg, sizeof(unsigned char), bmpInfoHeader.SizeImage, fp);
+    
+    free(inimg); 
+    free(outimg);
+    
+    fclose(fp); 
+    
+    return 0;
 }
+
