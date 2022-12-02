@@ -60,47 +60,39 @@ int main(int argc, char** argv) {
     printf("Image Size : %d\n",imagesize);
     printf("Used Color : %d\n",bmpInfoHeader.biClrUsed);
 	inimg=(BYTE*)malloc(sizeof(BYTE)*imagesize); 
-	outimg=(BYTE*)malloc(sizeof(BYTE)*(bmpInfoHeader.biWidth*bmpInfoHeader.biHeight*3)); 
-    palrgb = (RGBQUAD*)malloc(sizeof(RGBQUAD)*bmpInfoHeader.biClrUsed);
-    fread(palrgb, sizeof(RGBQUAD), bmpInfoHeader.biClrUsed, fp);
+	outimg=(BYTE*)malloc(sizeof(BYTE)*imagesize/3); 
+    palrgb = (RGBQUAD*)malloc(sizeof(RGBQUAD)*256);
+    //fread(palrgb, sizeof(RGBQUAD), bmpInfoHeader.biClrUsed, fp);
 
 	fread(inimg, sizeof(BYTE), imagesize, fp); 
 
-    for(int i=0; i<bmpInfoHeader.biClrUsed;i++) {
+    for(int i = 0; i < bmpInfoHeader.biClrUsed; i++) {
             printf("Index %d : %u %u %u %u\n",i, palrgb[i].rgbRed, palrgb[i].rgbGreen, palrgb[i].rgbBlue, palrgb[i].rgbReserved);
     }
-    //printf("Index 0  : %u %u %u %u\n", palrgb[0].rgbRed, palrgb[0].rgbGreen, palrgb[0].rgbBlue, palrgb[0].rgbReserved);
-    //printf("Index 1  : %u %u %u %u\n", palrgb[1].rgbRed, palrgb[1].rgbGreen, palrgb[1].rgbBlue, palrgb[1].rgbReserved);
 
 	fclose(fp);
+
+    for (int i = 0; i < 256 ; i++) {
+            palrgb[i].rgbRed = i;
+            palrgb[i].rgbGreen = i;
+            palrgb[i].rgbBlue = i;
+    }
 	
-    int mask = 0;
-    for(int x=0; x < bmpInfoHeader.biBitCount; x++)
-        mask |= 0b1 << x;
-    printf("%d\n",mask); 
     float elemsize = bmpInfoHeader.biBitCount / 8.;
     int pos = 0;
-    for(i = 0; i < bmpInfoHeader.biWidth * bmpInfoHeader.biHeight * elemsize; i++) {
-        int num = inimg[i];
-        for (j = 8-bmpInfoHeader.biBitCount; j >= 0; j -= bmpInfoHeader.biBitCount)
-        {
-                //int res = num >> j & 0b00001111;
-                int res = num >> j & mask;
-                outimg[pos++] = palrgb[res].rgbBlue;
-                outimg[pos++] = palrgb[res].rgbGreen;
-                outimg[pos++] = palrgb[res].rgbRed;
-                
-//                int res2 = num & 0b00001111;
-//                outimg[pos++] = palrgb[res2].rgbBlue;
-//                outimg[pos++] = palrgb[res2].rgbGreen;
-//                outimg[pos++] = palrgb[res2].rgbRed;
-        }
+    for(i = 0; i < bmpInfoHeader.biWidth * bmpInfoHeader.biHeight; i++) {
+            r = inimg[(i*3)+2];
+            g = inimg[(i*3)+1];
+            b = inimg[(i*3)];
+            gray = (r*0.3F)+(g*0.59F)+(b*0.11F);
+
+            outimg[i] = gray;
     }
 
-    bmpInfoHeader.biBitCount = 24;
-    bmpInfoHeader.SizeImage = bmpInfoHeader.biWidth * bmpInfoHeader.biHeight * 3;
-    bmpInfoHeader.biClrUsed = 0;
-    bmpFileHeader.bf0ffBits = sizeof(bmpInfoHeader) + sizeof(bmpFileHeader);
+    bmpInfoHeader.biBitCount = 8;
+    bmpInfoHeader.SizeImage = bmpInfoHeader.biWidth * bmpInfoHeader.biHeight;
+    bmpInfoHeader.biClrUsed = 256;
+    bmpFileHeader.bf0ffBits = sizeof(bmpInfoHeader) + sizeof(bmpFileHeader) + sizeof(RGBQUAD)*256;
 	
 	if((fp=fopen(output, "wb"))==NULL) { 
 		fprintf(stderr, "Error : Failed to open file...₩n"); 
@@ -109,7 +101,7 @@ int main(int argc, char** argv) {
 	
 	fwrite(&bmpFileHeader, sizeof(bmpFileHeader), 1, fp); 
 	fwrite(&bmpInfoHeader, sizeof(bmpInfoHeader), 1, fp); 
-
+    fwrite(palrgb, sizeof(palrgb), 256, fp);
 	fwrite(outimg, sizeof(unsigned char), bmpInfoHeader.SizeImage, fp);
 	
 	free(inimg); 

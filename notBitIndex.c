@@ -86,9 +86,9 @@ int main(int argc, char** argv) {
         {
                 //int res = num >> j & 0b00001111;
                 int res = num >> j & mask;
-                outimg[pos++] = palrgb[res].rgbBlue;
-                outimg[pos++] = palrgb[res].rgbGreen;
-                outimg[pos++] = palrgb[res].rgbRed;
+                outimg[pos++] = ~palrgb[res].rgbBlue;
+                outimg[pos++] = ~palrgb[res].rgbGreen;
+                outimg[pos++] = ~palrgb[res].rgbRed;
                 
 //                int res2 = num & 0b00001111;
 //                outimg[pos++] = palrgb[res2].rgbBlue;
