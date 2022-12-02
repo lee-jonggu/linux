@@ -66,35 +66,22 @@ int main(int argc, char** argv) {
 
 	fread(inimg, sizeof(BYTE), imagesize, fp); 
 
-    for(int i=0; i<bmpInfoHeader.biClrUsed;i++) {
+    for(int i = 0; i < bmpInfoHeader.biClrUsed; i++) {
             printf("Index %d : %u %u %u %u\n",i, palrgb[i].rgbRed, palrgb[i].rgbGreen, palrgb[i].rgbBlue, palrgb[i].rgbReserved);
     }
-    //printf("Index 0  : %u %u %u %u\n", palrgb[0].rgbRed, palrgb[0].rgbGreen, palrgb[0].rgbBlue, palrgb[0].rgbReserved);
-    //printf("Index 1  : %u %u %u %u\n", palrgb[1].rgbRed, palrgb[1].rgbGreen, palrgb[1].rgbBlue, palrgb[1].rgbReserved);
+//    printf("Index 0  : %u %u %u %u\n", palrgb[0].rgbRed, palrgb[0].rgbGreen, palrgb[0].rgbBlue, palrgb[0].rgbReserved);
+//    printf("Index 1  : %u %u %u %u\n", palrgb[1].rgbRed, palrgb[1].rgbGreen, palrgb[1].rgbBlue, palrgb[1].rgbReserved);
 
 	fclose(fp);
 	
-    int mask = 0;
-    for(int x=0; x < bmpInfoHeader.biBitCount; x++)
-        mask |= 0b1 << x;
-    printf("%d\n",mask); 
     float elemsize = bmpInfoHeader.biBitCount / 8.;
     int pos = 0;
     for(i = 0; i < bmpInfoHeader.biWidth * bmpInfoHeader.biHeight * elemsize; i++) {
-        for (j = 8-bmpInfoHeader.biBitCount; j >= 0; j -= bmpInfoHeader.biBitCount)
-        {
                 int num = inimg[i];
-                //int res = num >> j & 0b00001111;
-                int res = num >> j & mask;
+                int res = num;
                 outimg[pos++] = palrgb[res].rgbBlue;
                 outimg[pos++] = palrgb[res].rgbGreen;
                 outimg[pos++] = palrgb[res].rgbRed;
-                
-//                int res2 = num & 0b00001111;
-//                outimg[pos++] = palrgb[res2].rgbBlue;
-//                outimg[pos++] = palrgb[res2].rgbGreen;
-//                outimg[pos++] = palrgb[res2].rgbRed;
-        }
     }
 
     bmpInfoHeader.biBitCount = 24;
