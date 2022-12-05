@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 
     bmpInfoHeader.biBitCount = 8;
     bmpInfoHeader.SizeImage = bmpInfoHeader.biWidth * bmpInfoHeader.biHeight;
-    bmpInfoHeader.biClrUsed = 256;
+    bmpInfoHeader.biClrUsed = 0;
     bmpFileHeader.bf0ffBits = sizeof(bmpInfoHeader) + sizeof(bmpFileHeader) + sizeof(RGBQUAD)*256;
 	
 	if((fp=fopen(output, "wb"))==NULL) { 

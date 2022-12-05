@@ -11,14 +11,19 @@
 
 typedef unsigned char ubyte;
 
+unsigned char clip(int value, int min, int max)
+{
+    return(value > max? max : value < min? min : value);
+}
+
 int main(int argc, char** argv) 
 {
     FILE* fp; 
     BITMAPFILEHEADER bmpHeader;             /* BMP FILE INFO */
     BITMAPINFOHEADER bmpInfoHeader;     /* BMP IMAGE INFO */
     RGBQUAD *palrgb;
-    ubyte *inimg, *outimg;
-    int x, y, z, imageSize;
+    ubyte *inimg, *outimg, *padimg;
+    int x, y, z, imageSize, padsize;
 
     if(argc != 3) {
         fprintf(stderr, "usage : %s input.bmp output.bmp\n", argv[0]);
@@ -54,30 +59,54 @@ int main(int argc, char** argv)
     printf("Image Size : %d\n", imageSize);
 
     inimg = (ubyte*)malloc(sizeof(ubyte)*imageSize); 
+
+    // padding img add
+    padsize = imageSize + (bmpInfoHeader.biWidth + bmpInfoHeader.biHeight +2)*2*elemSize;
+    
+    int padrow = (bmpInfoHeader.biWidth + 2) * elemSize;
+    printf("inimg size : %d, padimg size : %d\n", imageSize, padsize);
+    padimg = (ubyte*)malloc(sizeof(ubyte)*padsize);
+
     outimg = (ubyte*)malloc(sizeof(ubyte)*imageSize);
     fread(inimg, sizeof(ubyte), imageSize, fp); 
     
     fclose(fp);
 
+    memset(padimg, 0, sizeof(ubyte)*padsize);
+
+    for(y = 1; y < bmpInfoHeader.biHeight+1; y++) {
+            //for (x = elemSize; x < bmpInfoHeader.biWidth*elemSize; x+=elemSize) {
+            for (x = elemSize; x < padrow; x+=elemSize) {
+                for ( z = 0; z < elemSize; z++) {
+                    padimg[x +(y* padrow)+z] = inimg[(x-elemSize)+(y-1)*size+z];
+                }
+            }
+    }
+
+    for(y=0;y<bmpInfoHeader.biHeight;y++) {
+            for(z=0;z<elemSize;z++) {
+                   padimg[0+y*padrow+z] = inimg[0+y*size+z];
+            }
+    }
     // define the kernel
-    float kernel[3][3] = { {1/9.0, 1/9.0, 1/9.0},
-                           {1/9.0, 1/9.0, 1/9.0},
-                           {1/9.0, 1/9.0, 1/9.0} };
+    float kernel[3][3] = { {-1, -1, -1},
+                           {-1, 9, -1},
+                           {-1, -1, -1} };
     memset(outimg, 0, sizeof(ubyte)*imageSize);
-    for(y = 1; y < bmpInfoHeader.biHeight - 1; y++) { 
-        for(x = 1; x < (bmpInfoHeader.biWidth - 1) * elemSize; x+=elemSize) {
+    for(y = 1; y < bmpInfoHeader.biHeight+1; y++) { 
+        for(x = elemSize; x < (bmpInfoHeader.biWidth+elemSize) * elemSize; x+=elemSize) {
             for(z = 0; z < elemSize; z++) {
                 float sum = 0.0;
                 for(int i = -1; i < 2; i++) {
                     for(int j = -1; j < 2; j++) {
-                        sum += kernel[i+1][j+1]*inimg[(x-i*elemSize)+(y-j)*size+z];
+                        sum += kernel[i+1][j+1]*padimg[(x+i*elemSize)+(y+j)*padrow+z];
                     }
                 }
-                outimg[x+y*size+z] = sum;
+                outimg[(x-elemSize)+(y-1)*size+z] = clip(sum, 0, 255);
             }
         }
     }         
-     
+                               
     /***** write bmp *****/ 
     if((fp=fopen(argv[2], "wb"))==NULL) { 
         fprintf(stderr, "Error : Failed to open file...₩n"); 
