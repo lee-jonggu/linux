@@ -85,9 +85,23 @@ int main(int argc, char** argv)
 
     for(y=0;y<bmpInfoHeader.biHeight;y++) {
             for(z=0;z<elemSize;z++) {
-                   padimg[0+y*padrow+z] = inimg[0+y*size+z];
+                   padimg[0+(y+1)*padrow+z] = inimg[0+y*size+z];
+                   padimg[(padrow-elemSize)+(y+1)*padrow+z]=inimg[size-elemSize+y*size+z];
             }
     }
+
+    for(x=0;x<padrow;x++) {
+        padimg[elemSize+x] = inimg[x];
+        padimg[elemSize+x+(bmpInfoHeader.biHeight+1)*padrow] = inimg[x+(bmpInfoHeader.biHeight-1)*size];
+    }
+
+    for(z=0;z<elemSize;z++) {
+        padimg[z] = inimg[z];   // (x,y) : left down
+        padimg[padrow-elemSize+z] = inimg[size-elemSize+z]; // (x,y) : right down
+        padimg[(bmpInfoHeader.biHeight+1)*padrow+z] = inimg[(bmpInfoHeader.biHeight-1)*size+z];
+        padimg[(padrow-elemSize)+(bmpInfoHeader.biHeight+1)*padrow+z] = inimg[(padrow-elemSize)+(bmpInfoHeader.biHeight-1)*size+z];
+    }
+
     // define the kernel
     float kernel[3][3] = { {-1, -1, -1},
                            {-1, 9, -1},
