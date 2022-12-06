@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 	 };	   
 
     srand((unsigned int)time(NULL));
-    int count = 2000;
+    int count = 10000;
     for (int c = 0; c < count ; c++) {
 
             int ypos = rand()%(bmpInfoHeader.biWidth*bmpInfoHeader.biHeight);
