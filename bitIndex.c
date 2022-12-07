@@ -43,6 +43,11 @@ int main(int argc, char** argv) {
 	fread(&bmpFileHeader, sizeof(bmpFileHeader), 1, fp); 
     fread(&bmpInfoHeader, sizeof(bmpInfoHeader), 1, fp);
 
+    if(bmpInfoHeader.biBitCount == 24) {
+            printf("already 24 bit Image\n");
+            return 1;
+    }
+
     if(bmpInfoHeader.biBitCount == 8 && bmpInfoHeader.biClrUsed == 0) {
             bmpInfoHeader.biClrUsed = 256;
     }
