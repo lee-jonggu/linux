@@ -105,13 +105,13 @@ int main(int argc, char** argv)
 		};
 	};
 
-  // sobel edge
-    float yKernel[3][3] = { {-1, 0, 1},
-                           {-2,  0, 2},
-                           {-1, 0, 1} };
-    float xKernel[3][3] = { {1, 2, 1},
-                           {0,  0, 0},
-                           {-1, -2, -1} };
+  // Prewitt edge
+    float xKernel[3][3] = { {-1, 0, 0},
+                           {0,  1, 0},
+                           {0, 0, 0} };
+    float yKernel[3][3] = { {0, 0,-1},
+                           {0,  1, 0},
+                           {0, 0, 0} };
     int c = 0;
 
     memset(outimg, 0, sizeof(ubyte)*imageSize);
