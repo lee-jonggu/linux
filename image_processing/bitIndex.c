@@ -43,10 +43,10 @@ int main(int argc, char** argv) {
 	fread(&bmpFileHeader, sizeof(bmpFileHeader), 1, fp); 
     fread(&bmpInfoHeader, sizeof(bmpInfoHeader), 1, fp);
 
-    if(bmpInfoHeader.biBitCount == 24) {
-            printf("already 24 bit Image\n");
-            return 1;
-    }
+//    if(bmpInfoHeader.biBitCount == 24) {
+//            printf("already 24 bit Image\n");
+//            return 1;
+//    }
 
     if(bmpInfoHeader.biBitCount == 8 && bmpInfoHeader.biClrUsed == 0) {
             bmpInfoHeader.biClrUsed = 256;
@@ -71,11 +71,11 @@ int main(int argc, char** argv) {
 
 	fread(inimg, sizeof(BYTE), imagesize, fp); 
 
-//    for(int i=0; i<bmpInfoHeader.biClrUsed;i++) {
-//            printf("Index %d : %u %u %u %u\n",i, palrgb[i].rgbRed, palrgb[i].rgbGreen, palrgb[i].rgbBlue, palrgb[i].rgbReserved);
-//    }
-    //printf("Index 0  : %u %u %u %u\n", palrgb[0].rgbRed, palrgb[0].rgbGreen, palrgb[0].rgbBlue, palrgb[0].rgbReserved);
-    //printf("Index 1  : %u %u %u %u\n", palrgb[1].rgbRed, palrgb[1].rgbGreen, palrgb[1].rgbBlue, palrgb[1].rgbReserved);
+    for(int i=0; i<bmpInfoHeader.biClrUsed;i++) {
+            printf("Index %d : %u %u %u %u\n",i, palrgb[i].rgbRed, palrgb[i].rgbGreen, palrgb[i].rgbBlue, palrgb[i].rgbReserved);
+    }
+//    printf("Index 0  : %u %u %u %u\n", palrgb[0].rgbRed, palrgb[0].rgbGreen, palrgb[0].rgbBlue, palrgb[0].rgbReserved);
+//    printf("Index 1  : %u %u %u %u\n", palrgb[1].rgbRed, palrgb[1].rgbGreen, palrgb[1].rgbBlue, palrgb[1].rgbReserved);
 
 	fclose(fp);
 	
