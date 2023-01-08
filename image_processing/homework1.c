@@ -44,8 +44,8 @@ int main(int argc, char** argv) {
                 for(i = 0; i < bmpInfoHeader.biWidth * elemsize ; i += elemsize) {
                         B = inimg[i +j* bmpInfoHeader.biWidth * elemsize+0];
                         G = inimg[i +j* bmpInfoHeader.biWidth * elemsize+1];
-                        R = inimg[i +j* bmpInfoHeader.biWidth * elemsize+2];
-                        //printf("(R,G,B) (%d %d %d)\n", R, G, B);
+                        R = inimg[i +j* bmpInfoHeader.biWidth * elemsize+2]; 
+                        
                         printf("[B,G,R] : %d %d %d\n",inimg[i + j * width+0],
                                             inimg[i + j * width+1],
                                             inimg[i + j * width+2]);
